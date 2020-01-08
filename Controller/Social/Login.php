@@ -72,15 +72,20 @@ class Login extends AbstractSocial
             $requiredMoreInfo = (int) $this->apiHelper->requiredMoreInfo();
             if ((!$userProfile->email && $requiredMoreInfo === 2) || $requiredMoreInfo === 1) {
                 $this->session->setUserProfile($userProfile);
+                $this->session->setUserProfileType($type);
+                // to pre-fill customer firstname and lastname
+                $this->session->setCustomerFormData([
+                    'firstname' => $userProfile->firstName,
+                    'lastname'  => $userProfile->lastName,
+                ]);
 
-                return $this->_appendJs(
-                    sprintf(
-                        "<script>window.close();window.opener.fakeEmailCallback('%s','%s','%s');</script>",
-                        $type,
-                        $userProfile->firstName,
-                        $userProfile->lastName
-                    )
+                $this->messageManager->addErrorMessage(
+                    __('We cannot receive your email address from the %1. Please provide below your data.', $type)
                 );
+                return $this->_appendJs(sprintf(
+                    "<script>window.opener.socialCallback('%s', window);</script>",
+                    $this->_url->getUrl('customer/account/create')
+                ));
             }
             $customer = $this->createCustomerProcess($userProfile, $type);
         }
